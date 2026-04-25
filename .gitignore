@@ -1,0 +1,33 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.venv
+
+# Node
+node_modules/
+packages/web/dist/
+packages/new_web/dist/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Terraform / OpenTofu
+**/.terraform/
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/terraform.tfstate.*
+**/terraform.tfvars
+!**/terraform.tfvars.example
+
+# Local data caches
+packages/analysis/cache/
+packages/analysis/output/

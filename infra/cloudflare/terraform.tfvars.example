@@ -1,0 +1,6 @@
+cloudflare_account_id = "YOUR_ACCOUNT_ID"
+cloudflare_zone_id    = "YOUR_ZONE_ID"
+cloudflare_api_token  = "YOUR_API_TOKEN"
+domain                = "lucagelmini.ar"
+subdomain             = "hackaton"
+local_port            = 5173

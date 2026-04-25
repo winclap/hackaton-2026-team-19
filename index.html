@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Real Voice Brief — by Winclap</title>
+  <style>
+    /* ── Reset & Base ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:    #0d0d0d;
+      --white:    #ffffff;
+      --gray-50:  #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-400: #9ca3af;
+      --gray-600: #4b5563;
+      --gray-800: #1f2937;
+      --green:    #16a34a;
+      --green-bg: #f0fdf4;
+      --red:      #dc2626;
+      --red-bg:   #fef2f2;
+      --amber:    #d97706;
+      --amber-bg: #fffbeb;
+      --accent:   #7c3aed;
+      --accent-light: #ede9fe;
+      --radius:   12px;
+      --shadow:   0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-800);
+      min-height: 100vh;
+    }
+
+    /* ── Header ───────────────────────────────────────────────────── */
+    header {
+      background: var(--black);
+      color: var(--white);
+      padding: 0 2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-dot {
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      background: transparent;
+      color: #a78bfa;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      border: 1px solid #4c1d95;
+    }
+
+    .arrow { color: #a78bfa; margin: 0 1px; }
+
+    /* ── Hero ─────────────────────────────────────────────────────── */
+    .hero {
+      background: var(--black);
+      color: white;
+      text-align: center;
+      padding: 4rem 2rem 5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 .arrow-label {
+      color: #a78bfa;
+      font-weight: 400;
+      font-size: 0.65em;
+      vertical-align: middle;
+      margin: 0 6px;
+    }
+
+    .hero p {
+      color: #9ca3af;
+      font-size: 1rem;
+      max-width: 520px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.7;
+    }
+
+    .hero p strong { color: #e5e7eb; font-weight: 600; }
+
+    /* ── Search Card ──────────────────────────────────────────────── */
+    .search-wrapper {
+      max-width: 680px;
+      margin: -2.5rem auto 0;
+      padding: 0 1rem;
+      position: relative;
+      z-index: 10;
+    }
+
+    .search-card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: 0 8px 40px rgba(0,0,0,.18);
+      padding: 1.75rem 2rem;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .field input, .field select {
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s;
+      background: var(--gray-50);
+      color: var(--gray-800);
+    }
+
+    .field input:focus, .field select:focus {
+      border-color: var(--accent);
+      background: white;
+    }
+
+    .field.grow { flex: 1; min-width: 200px; }
+
+    .btn-analyze {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.7rem 1.6rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-analyze:hover { opacity: 0.88; }
+    .btn-analyze:active { transform: scale(0.97); }
+    .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Main Content ─────────────────────────────────────────────── */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 4rem;
+    }
+
+    /* ── Empty State ──────────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--gray-400);
+    }
+
+    .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
+    .empty-state p { font-size: 1rem; }
+
+    /* ── Loading ──────────────────────────────────────────────────── */
+    .loading { display: none; text-align: center; padding: 3rem; }
+    .loading.visible { display: block; }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 400px;
+      margin: 2rem auto 0;
+      text-align: left;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: white;
+      border-radius: 8px;
+      border: 1.5px solid var(--gray-200);
+      font-size: 0.9rem;
+      color: var(--gray-600);
+      transition: all 0.3s;
+    }
+
+    .step.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .step.done {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .step-icon { font-size: 1.1rem; width: 24px; text-align: center; }
+
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--gray-200);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1.5rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Results ──────────────────────────────────────────────────── */
+    .results { display: none; }
+    .results.visible { display: block; }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .results-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .results-meta { color: var(--gray-400); font-size: 0.85rem; }
+
+    .btn-reset {
+      background: var(--gray-100);
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--gray-600);
+    }
+
+    .btn-reset:hover { background: var(--gray-200); }
+
+    /* Stats row */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 1.2rem;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .stat-value { font-size: 1.8rem; font-weight: 800; }
+    .stat-label { font-size: 0.78rem; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--gray-100);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 2rem;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 0.55rem 1rem;
+      border-radius: 7px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--gray-600);
+      transition: all 0.15s;
+      border: none;
+      background: transparent;
+    }
+
+    .tab.active {
+      background: white;
+      color: var(--gray-800);
+      box-shadow: 0 1px 4px rgba(0,0,0,.1);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Insight grid */
+    .insight-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 640px) { .insight-grid { grid-template-columns: 1fr; } }
+
+    .insight-section h3 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 10px;
+    }
+
+    .insight-section.positive h3 { color: var(--green); }
+    .insight-section.negative h3 { color: var(--red); }
+
+    .insight-item {
+      background: white;
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+      border-left: 3px solid transparent;
+    }
+
+    .insight-section.positive .insight-item { border-left-color: var(--green); }
+    .insight-section.negative .insight-item { border-left-color: var(--red); }
+
+    .insight-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .freq-tag {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .freq-alta { background: #fee2e2; color: var(--red); }
+    .freq-media { background: #fef9c3; color: #854d0e; }
+    .freq-baja { background: var(--gray-100); color: var(--gray-400); }
+
+    .insight-desc { font-size: 0.82rem; color: var(--gray-600); line-height: 1.5; }
+
+    .quotes { margin-top: 8px; }
+
+    .quote {
+      font-size: 0.8rem;
+      color: var(--gray-600);
+      font-style: italic;
+      background: var(--gray-50);
+      border-radius: 6px;
+      padding: 6px 10px;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    /* Frases poderosas */
+    .phrases-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 10px;
+      margin-top: 1rem;
+    }
+
+    .phrase-card {
+      background: var(--amber-bg);
+      border-left: 3px solid var(--amber);
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+      font-size: 0.88rem;
+      font-style: italic;
+      color: var(--gray-800);
+      line-height: 1.5;
+    }
+
+    /* Briefs */
+    .brief-card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 1.2rem;
+      overflow: hidden;
+    }
+
+    .brief-header {
+      padding: 1.2rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1.5px solid transparent;
+      transition: border-color 0.2s;
+    }
+
+    .brief-card.open .brief-header {
+      border-bottom-color: var(--gray-200);
+    }
+
+    .brief-number {
+      width: 32px; height: 32px;
+      background: var(--accent-light);
+      color: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .brief-title-group { flex: 1; }
+
+    .brief-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--gray-800);
+    }
+
+    .brief-meta {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 9px;
+      border-radius: 20px;
+      text-transform: capitalize;
+    }
+
+    .pill-objetivo  { background: var(--accent-light); color: var(--accent); }
+    .pill-formato   { background: #dbeafe; color: #1d4ed8; }
+    .pill-segmento  { background: #d1fae5; color: #065f46; }
+
+    .why-wins {
+      background: var(--accent-light);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+      margin-top: 1rem;
+    }
+    .why-wins label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .why-wins p {
+      font-size: 0.88rem;
+      color: var(--gray-800);
+      line-height: 1.5;
+    }
+
+    /* Clusters */
+    .cluster-card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.2rem 1.5rem;
+      margin-bottom: 12px;
+    }
+    .cluster-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .cluster-theme {
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-transform: capitalize;
+    }
+    .cluster-vol {
+      font-size: 0.78rem;
+      color: var(--gray-400);
+      background: var(--gray-100);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    .cluster-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .cluster-section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--gray-400);
+      margin-bottom: 4px;
+    }
+    .emotion-pill {
+      display: inline-block;
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 0.75rem;
+      padding: 2px 10px;
+      border-radius: 20px;
+      margin: 2px;
+      font-weight: 600;
+    }
+    .moment-item {
+      font-size: 0.82rem;
+      color: var(--gray-600);
+      font-style: italic;
+      margin-bottom: 2px;
+    }
+    .cluster-quotes { margin-top: 8px; border-top: 1px solid var(--gray-100); padding-top: 8px; }
+
+    .brief-chevron {
+      color: var(--gray-400);
+      font-size: 1rem;
+      transition: transform 0.2s;
+    }
+
+    .brief-card.open .brief-chevron { transform: rotate(180deg); }
+
+    .brief-body {
+      display: none;
+      padding: 1.5rem;
+    }
+
+    .brief-card.open .brief-body { display: block; }
+
+    .brief-hook {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--gray-800);
+      font-style: italic;
+      line-height: 1.3;
+      margin-bottom: 1.2rem;
+      padding-bottom: 1.2rem;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .brief-hook::before { content: '"'; color: var(--accent); }
+    .brief-hook::after  { content: '"'; color: var(--accent); }
+
+    .brief-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+    }
+
+    @media (max-width: 640px) { .brief-grid { grid-template-columns: 1fr; } }
+
+    .brief-field label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--gray-400);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .brief-field p {
+      font-size: 0.88rem;
+      color: var(--gray-800);
+      line-height: 1.5;
+    }
+
+    .testimonial {
+      background: var(--amber-bg);
+      border-left: 3px solid var(--amber);
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+      font-style: italic;
+      font-size: 0.88rem;
+      margin-bottom: 1.2rem;
+      line-height: 1.5;
+    }
+
+    .do-dont {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1.2rem;
+    }
+
+    @media (max-width: 640px) { .do-dont { grid-template-columns: 1fr; } }
+
+    .do-list, .dont-list { font-size: 0.82rem; }
+
+    .do-list h4   { color: var(--green); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .dont-list h4 { color: var(--red);   font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+
+    .do-list li, .dont-list li {
+      margin-bottom: 4px;
+      padding-left: 4px;
+      line-height: 1.4;
+      color: var(--gray-700);
+    }
+
+    /* Error */
+    .error-box {
+      background: var(--red-bg);
+      border: 1.5px solid #fca5a5;
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+      color: var(--red);
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .error-box.visible { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────── -->
+<header>
+  <div class="logo">
+    <span class="logo-dot"></span>
+    The Real Voice Brief
+  </div>
+  <span class="badge">by Winclap</span>
+</header>
+
+<!-- ── Hero ────────────────────────────────────────────────────────── -->
+<div class="hero">
+  <h1>
+    Scrape
+    <span class="arrow-label">→</span>
+    Brief
+    <span class="arrow-label">→</span>
+    Scale
+  </h1>
+  <p>
+    Analizamos <strong>lo que dicen los usuarios reales</strong> en todas las plataformas
+    y lo combinamos con <strong>la performance histórica de tus creativos</strong>
+    para generarte briefs listos para ejecutar y escalar.
+  </p>
+</div>
+
+<!-- ── Search Card ─────────────────────────────────────────────────── -->
+<div class="search-wrapper">
+  <div class="search-card">
+    <div class="search-row">
+      <div class="field grow">
+        <label>Nombre de la app</label>
+        <input id="appName" type="text" placeholder="Ej: DiDi, Rappi, Ualá..." autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>País</label>
+        <select id="country">
+          <option value="ar">🇦🇷 Argentina</option>
+          <option value="mx">🇲🇽 México</option>
+          <option value="br">🇧🇷 Brasil</option>
+          <option value="co">🇨🇴 Colombia</option>
+          <option value="cl">🇨🇱 Chile</option>
+          <option value="us">🇺🇸 Estados Unidos</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Idioma</label>
+        <select id="lang">
+          <option value="es">Español</option>
+          <option value="pt">Português</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <button class="btn-analyze" id="analyzeBtn" onclick="runAnalysis()">
+        <span>⚡</span> Analizar
+      </button>
+    </div>
+    <div class="error-box" id="errorBox"></div>
+  </div>
+</div>
+
+<!-- ── Main ────────────────────────────────────────────────────────── -->
+<div class="container">
+
+  <!-- Empty state -->
+  <div class="empty-state" id="emptyState">
+    <div class="icon">🔍</div>
+    <p>Ingresá el nombre de una app para comenzar el análisis.</p>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p style="color: var(--gray-600); font-weight: 600;">Analizando reviews...</p>
+    <div class="steps">
+      <div class="step" id="step1"><span class="step-icon">📱</span> Scrapeando App Store y Google Play</div>
+      <div class="step" id="step2"><span class="step-icon">💬</span> Recolectando menciones en Reddit</div>
+      <div class="step" id="step3"><span class="step-icon">🧠</span> Analizando con AI</div>
+      <div class="step" id="step4"><span class="step-icon">🎯</span> Generando creative briefs</div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="results-header">
+      <div>
+        <div class="results-title" id="resultsTitle"></div>
+        <div class="results-meta" id="resultsMeta"></div>
+      </div>
+      <button class="btn-reset" onclick="resetUI()">← Nueva búsqueda</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats" id="statsRow"></div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('briefs')">🎯 Creative Briefs</button>
+      <button class="tab" onclick="switchTab('insights')">💡 Insights</button>
+      <button class="tab" onclick="switchTab('frases')">💬 Frases clave</button>
+    </div>
+
+    <!-- Tab: Briefs -->
+    <div class="tab-content active" id="tab-briefs">
+      <div id="briefsList"></div>
+    </div>
+
+    <!-- Tab: Insights -->
+    <div class="tab-content" id="tab-insights">
+      <p style="color:var(--gray-600); font-size:0.9rem; margin-bottom:1.2rem;">
+        Temas principales agrupados por cluster. Cada uno muestra volumen, emociones dominantes, momentos recurrentes y las mejores quotes.
+      </p>
+      <div id="clustersList"></div>
+    </div>
+
+    <!-- Tab: Frases -->
+    <div class="tab-content" id="tab-frases">
+      <p style="color:var(--gray-600); font-size:0.9rem; margin-bottom:1rem;">
+        Frases textuales de usuarios reales que pueden usarse como hooks, testimoniales o inspiración para copy.
+      </p>
+      <div class="phrases-grid" id="frasesList"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Script ───────────────────────────────────────────────────────── -->
+<script>
+  // ── Config ────────────────────────────────────────────────────────
+  // Cambiá esta URL cuando el backend esté deployado
+  const API_URL = "http://localhost:8000/analyze";
+
+  // ── State ─────────────────────────────────────────────────────────
+  let currentData = null;
+
+  // ── Entrada con Enter ─────────────────────────────────────────────
+  document.getElementById("appName").addEventListener("keydown", e => {
+    if (e.key === "Enter") runAnalysis();
+  });
+
+  // ── Main: correr análisis ─────────────────────────────────────────
+  async function runAnalysis() {
+    const appName = document.getElementById("appName").value.trim();
+    const country = document.getElementById("country").value;
+    const lang    = document.getElementById("lang").value;
+
+    if (!appName) {
+      showError("Por favor ingresá el nombre de una app.");
+      return;
+    }
+
+    hideError();
+    showLoading();
+    animateSteps();
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ app_name: appName, country, lang })
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.detail || `Error ${response.status}`);
+      }
+
+      const data = await response.json();
+      currentData = data;
+      renderResults(data, appName);
+
+    } catch (err) {
+      hideLoading();
+      showError(`No se pudo conectar con el servidor: ${err.message}`);
+    }
+  }
+
+  // ── Render ────────────────────────────────────────────────────────
+  function renderResults(data, appName) {
+    hideLoading();
+
+    const { analysis, briefs, total_reviews } = data;
+    const sent = analysis.sentimiento || {};
+
+    // Header
+    document.getElementById("resultsTitle").textContent = appName;
+    document.getElementById("resultsMeta").textContent =
+      `${total_reviews} reviews analizadas · ${briefs.length} briefs generados`;
+
+    // Stats
+    document.getElementById("statsRow").innerHTML = `
+      <div class="stat-card">
+        <div class="stat-value" style="color:var(--gray-800)">${total_reviews}</div>
+        <div class="stat-label">Reviews analizadas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:var(--green)">${sent.positivo_pct ?? "—"}%</div>
+        <div class="stat-label">Sentimiento positivo</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:var(--amber)">${sent.neutro_pct ?? "—"}%</div>
+        <div class="stat-label">Neutro</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:var(--red)">${sent.negativo_pct ?? "—"}%</div>
+        <div class="stat-label">Negativo</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:var(--accent)">${briefs.length}</div>
+        <div class="stat-label">Briefs generados</div>
+      </div>
+    `;
+
+    // Briefs (Layer 3)
+    document.getElementById("briefsList").innerHTML = briefs.map(b => renderBrief(b)).join("");
+
+    // Clusters (Layer 2)
+    const clusters = data.clusters || analysis.clusters || [];
+    document.getElementById("clustersList").innerHTML = clusters.length
+      ? clusters.map(c => renderCluster(c)).join("")
+      : `<p style="color:var(--gray-400);font-size:0.9rem">Los clusters van a aparecer acá cuando el backend los devuelva.</p>`;
+
+    // Frases quotables (verbatim_quotes del backend, o frases_poderosas como fallback)
+    const frases = data.verbatim_quotes || analysis.frases_poderosas || [];
+    document.getElementById("frasesList").innerHTML = frases.length
+      ? frases.map(f => `<div class="phrase-card">"${escHtml(typeof f === "string" ? f : f.verbatim_quote || f)}"</div>`).join("")
+      : `<p style="color:var(--gray-400);font-size:0.9rem">Las frases quotables van a aparecer acá.</p>`;
+
+    document.getElementById("results").classList.add("visible");
+    document.getElementById("emptyState").style.display = "none";
+    document.getElementById("results").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function renderBrief(b) {
+    const funnelEmoji = {
+      awareness: "📣", consideration: "🤔",
+      activation: "⚡", usage: "🔄",
+      retention: "🔁", advocacy: "💬"
+    }[b.funnel_stage] || "🎯";
+
+    const id = b.brief_id ?? b.numero ?? "?";
+
+    return `
+    <div class="brief-card" id="brief-${id}">
+      <div class="brief-header" onclick="toggleBrief('${id}')">
+        <div class="brief-number">${id}</div>
+        <div class="brief-title-group">
+          <div class="brief-title">${escHtml(b.title ?? b.angulo ?? "")}</div>
+          <div class="brief-meta">
+            <span class="pill pill-objetivo">${funnelEmoji} ${b.funnel_stage || ""}</span>
+            <span class="pill pill-formato">📐 ${escHtml(b.format ?? b.formato_recomendado ?? "")}</span>
+            ${b.target_segment ? `<span class="pill pill-segmento">👤 ${escHtml(b.target_segment)}</span>` : ""}
+          </div>
+        </div>
+        <span class="brief-chevron">▼</span>
+      </div>
+      <div class="brief-body">
+        <div class="brief-hook">${escHtml(b.hook)}</div>
+        <div class="brief-grid">
+          <div class="brief-field">
+            <label>Insight</label>
+            <p>${escHtml(b.insight ?? b.insight_base ?? "")}</p>
+          </div>
+          <div class="brief-field">
+            <label>Concepto del script</label>
+            <p>${escHtml(b.script_concept ?? b.mensaje_central ?? "")}</p>
+          </div>
+          <div class="brief-field">
+            <label>Ángulo narrativo</label>
+            <p>${escHtml(b.angle ?? b.angulo ?? "")}</p>
+          </div>
+          <div class="brief-field">
+            <label>Call to action</label>
+            <p>${escHtml(b.cta)}</p>
+          </div>
+        </div>
+        <div class="testimonial">"${escHtml(b.customer_quote_source ?? b.prueba_social ?? "")}"</div>
+        ${b.why_this_wins ? `
+        <div class="why-wins">
+          <label>⚡ Por qué este brief gana</label>
+          <p>${escHtml(b.why_this_wins)}</p>
+        </div>` : ""}
+      </div>
+    </div>`;
+  }
+
+  function renderCluster(c) {
+    const emotions = (c.top_emotions || []).map(e =>
+      `<span class="emotion-pill">${escHtml(e)}</span>`
+    ).join("");
+
+    const moments = (c.top_moments || []).map(m =>
+      `<div class="moment-item">📍 ${escHtml(m)}</div>`
+    ).join("");
+
+    const quotes = (c.top_quotes || []).slice(0, 3).map(q =>
+      `<div class="quote">"${escHtml(q)}"</div>`
+    ).join("");
+
+    return `
+    <div class="cluster-card">
+      <div class="cluster-header">
+        <div class="cluster-theme">${escHtml(c.theme ?? c.nombre ?? "")}</div>
+        <span class="cluster-vol">${c.count ?? c.volumen ?? 0} reviews · ${c.pct ?? c.porcentaje ?? 0}%</span>
+      </div>
+      <div class="cluster-row">
+        <div style="flex:1;min-width:160px">
+          <div class="cluster-section-label">Emociones dominantes</div>
+          <div>${emotions}</div>
+        </div>
+        <div style="flex:2;min-width:200px">
+          <div class="cluster-section-label">Momentos recurrentes</div>
+          ${moments}
+        </div>
+      </div>
+      <div class="cluster-quotes">${quotes}</div>
+    </div>`;
+  }
+
+  // ── UI helpers ────────────────────────────────────────────────────
+  function toggleBrief(id) {
+    document.getElementById(`brief-${id}`)?.classList.toggle("open");
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+    event.target.classList.add("active");
+    document.getElementById(`tab-${name}`).classList.add("active");
+  }
+
+  function showLoading() {
+    document.getElementById("emptyState").style.display = "none";
+    document.getElementById("results").classList.remove("visible");
+    document.getElementById("loading").classList.add("visible");
+    document.getElementById("analyzeBtn").disabled = true;
+  }
+
+  function hideLoading() {
+    document.getElementById("loading").classList.remove("visible");
+    document.getElementById("analyzeBtn").disabled = false;
+  }
+
+  function animateSteps() {
+    const steps = ["step1", "step2", "step3", "step4"];
+    const delays = [0, 8000, 18000, 30000];
+    steps.forEach((id, i) => {
+      setTimeout(() => {
+        if (i > 0) document.getElementById(steps[i-1]).classList.replace("active","done");
+        document.getElementById(id).classList.add("active");
+      }, delays[i]);
+    });
+  }
+
+  function resetUI() {
+    document.getElementById("results").classList.remove("visible");
+    document.getElementById("emptyState").style.display = "block";
+    document.getElementById("appName").value = "";
+    document.getElementById("appName").focus();
+  }
+
+  function showError(msg) {
+    const box = document.getElementById("errorBox");
+    box.textContent = "⚠️ " + msg;
+    box.classList.add("visible");
+  }
+
+  function hideError() {
+    document.getElementById("errorBox").classList.remove("visible");
+  }
+
+  function escHtml(str) {
+    if (!str) return "";
+    return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+[project]
+name = "api"
+version = "0.1.0"
+description = "FastAPI orchestrator: scrape → quick analysis → deep analysis with frontend webhooks"
+requires-python = ">=3.13"
+dependencies = [
+    "anthropic[bedrock]>=0.96.0",
+    "apify-client>=1.8.0",
+    "boto3>=1.34.0",
+    "fastapi>=0.136.1",
+    "httpx>=0.28.0",
+    "nest-asyncio>=1.6.0",
+    "nltk>=3.9.0",
+    "pandas>=3.0.2",
+    "python-dotenv>=1.2.2",
+    "scikit-learn>=1.6.0",
+    "uvicorn>=0.46.0",
+]
