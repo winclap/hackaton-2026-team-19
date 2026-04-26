@@ -72,7 +72,18 @@ def generate_briefs(
 
     Returns (briefs, clusters) tuple.
     """
+    # Fallback to TF-IDF theme_label when deep analysis didn't produce themes.
+    if "theme" not in df.columns or df["theme"].notna().sum() == 0:
+        df = df.copy()
+        if "theme_label" in df.columns:
+            df["theme"] = df["theme_label"]
+        else:
+            df["theme"] = "general"
+
     df_valid = df.dropna(subset=["theme"])
+    if df_valid.empty:
+        df_valid = df.assign(theme="general")
+
     clusters = []
     for theme, group in df_valid.groupby("theme"):
         top_quotes = (

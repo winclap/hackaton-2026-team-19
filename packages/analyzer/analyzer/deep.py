@@ -109,15 +109,23 @@ async def _analyze_all_chunks(
     total_chunks = len(chunks)
     print(f"[analyzer] Deep analysis: {len(reviews)} reviews in {total_chunks} chunks of {chunk_size}")
 
-    results: list[dict] = []
     tasks = [_analyze_chunk(client, c, brand_config, semaphore, i) for i, c in enumerate(chunks)]
 
-    for i, coro in enumerate(asyncio.as_completed(tasks)):
-        chunk_result = await coro
-        results.extend(chunk_result)
-        if on_chunk_done:
-            await on_chunk_done(completed=i + 1, total=total_chunks)
+    completed = 0
+    chunk_results: list[list[dict] | None] = [None] * total_chunks
+    pending = {asyncio.ensure_future(t): i for i, t in enumerate(tasks)}
+    while pending:
+        done, _ = await asyncio.wait(pending.keys(), return_when=asyncio.FIRST_COMPLETED)
+        for fut in done:
+            idx = pending.pop(fut)
+            chunk_results[idx] = await fut
+            completed += 1
+            if on_chunk_done:
+                await on_chunk_done(completed=completed, total=total_chunks)
 
+    results: list[dict] = []
+    for r in chunk_results:
+        results.extend(r or [])
     return results
 
 
@@ -150,8 +158,27 @@ def analyze_deep(
 
     df_analysis = pd.DataFrame([a if a else {} for a in analyses])
 
+    # Guarantee deep-analysis schema even if all chunks failed (Bedrock down,
+    # auth missing, JSON parse errors). Downstream brief generation requires
+    # at least the `theme` column to exist.
+    expected_cols = [
+        "theme", "emotion", "funnel_stage", "job_to_be_done",
+        "pain_or_delight", "moment", "quotable", "verbatim_quote",
+        "creative_potential", "strategic_signal",
+    ]
+    for col in expected_cols:
+        if col not in df_analysis.columns:
+            df_analysis[col] = None
+
+    # Pad/truncate to df length so column assignment aligns row-by-row.
+    if len(df_analysis) < len(df):
+        pad = pd.DataFrame([{c: None for c in df_analysis.columns}] * (len(df) - len(df_analysis)))
+        df_analysis = pd.concat([df_analysis, pad], ignore_index=True)
+    elif len(df_analysis) > len(df):
+        df_analysis = df_analysis.iloc[:len(df)].reset_index(drop=True)
+
     deep_cols = [c for c in df_analysis.columns if c not in df.columns or c == "theme"]
     for col in deep_cols:
-        df[col] = df_analysis[col].values[:len(df)] if col in df_analysis.columns else None
+        df[col] = df_analysis[col].values
 
     return df

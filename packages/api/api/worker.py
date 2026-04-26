@@ -21,6 +21,7 @@ for pkg in ("scraper", "analyzer"):
         sys.path.insert(0, pkg_path)
 
 from scraper.collector import collect as scraper_collect
+from scraper.resolve import resolve_appstore_id, resolve_playstore_id
 from analyzer.sentiment import analyze_sentiment
 from analyzer.themes import extract_themes
 from analyzer.deep import analyze_deep
@@ -45,9 +46,45 @@ async def run_pipeline(job_id: str, req: AnalyzeRequest) -> None:
 
         apify_token = os.environ.get("APIFY-API-KEY", os.environ.get("APIFY_API_TOKEN", ""))
         sources_input = [s.model_dump() for s in req.sources]
-        # Run blocking Apify calls in thread pool
+
+        # Resolve app names → store IDs for appstore/playstore sources.
+        # Apify actors expect bundle IDs (e.g. "com.grability.rappi"), not display names.
         loop = asyncio.get_event_loop()
+        for cfg in sources_input:
+            src = cfg.get("source", "").lower()
+            query = cfg.get("query", "")
+            if not query or query.startswith("http"):
+                continue
+            looks_like_id = "." in query and " " not in query
+            if looks_like_id:
+                continue
+            country = cfg.get("country", "us")
+            try:
+                if src == "appstore":
+                    resolved = await loop.run_in_executor(
+                        None, lambda q=query, c=country: resolve_appstore_id(q, c)
+                    )
+                    if resolved:
+                        print(f"[worker] Resolved appstore '{query}' → '{resolved}'")
+                        cfg["query"] = resolved
+                elif src == "playstore":
+                    resolved = await loop.run_in_executor(
+                        None, lambda q=query: resolve_playstore_id(q)
+                    )
+                    if resolved:
+                        print(f"[worker] Resolved playstore '{query}' → '{resolved}'")
+                        cfg["query"] = resolved
+            except Exception as e:
+                print(f"[worker] Resolver failed for {src} '{query}': {e}")
+
+        # Run blocking Apify calls in thread pool
         df = await loop.run_in_executor(None, lambda: scraper_collect(sources_input, apify_token=apify_token))
+
+        if df.empty or "content" not in df.columns:
+            raise RuntimeError(
+                "No reviews collected. Check the app name/ID, source, country, "
+                "or APIFY token."
+            )
 
         total = len(df)
         JOBS[job_id]["total_reviews"] = total
