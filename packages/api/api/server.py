@@ -8,16 +8,22 @@ Endpoints:
 
 from __future__ import annotations
 
-import asyncio
-import os
+import logging
 import uuid
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, BackgroundTasks, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-load_dotenv(Path(__file__).parent.parent.parent.parent / ".env")
+load_dotenv(Path(__file__).resolve().parents[3] / ".env")
+
+from scraper.sources import SOURCES
+
+from .models import AnalyzeRequest
+from .worker import JOBS, run_pipeline
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 
 app = FastAPI(title="Voice Intelligence API", version="0.1.0")
 app.add_middleware(
@@ -27,46 +33,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Import after dotenv so env vars are available
-from .models import AnalyzeRequest, JobStatus
-from .worker import JOBS, run_pipeline
-
-# Lazy import sources registry
-_sources_cache = None
-
-
-def _get_sources():
-    global _sources_cache
-    if _sources_cache is None:
-        import sys
-        pkg_path = str(Path(__file__).parent.parent.parent / "scraper")
-        if pkg_path not in sys.path:
-            sys.path.insert(0, pkg_path)
-        from scraper.sources import SOURCES
-        _sources_cache = SOURCES
-    return _sources_cache
-
 
 @app.get("/api/sources")
-def list_sources():
-    """List available data sources."""
-    sources = _get_sources()
+def list_sources() -> dict:
     return {
         name: {"name": ds.name, "text_field": ds.text_field}
-        for name, ds in sources.items()
+        for name, ds in SOURCES.items()
     }
 
 
 @app.post("/api/report")
-async def create_report(req: AnalyzeRequest, bg: BackgroundTasks):
-    """Start a new analysis job. Returns job_id immediately.
-
-    The pipeline runs in background:
-    1. Scrape data via Apify
-    2. Quick ML analysis (sentiment + themes) → webhook call
-    3. Deep Haiku analysis (categorization + briefs) → webhook call
-    """
-    job_id = str(uuid.uuid4())[:8]
+async def create_report(req: AnalyzeRequest, bg: BackgroundTasks) -> dict:
+    job_id = uuid.uuid4().hex[:8]
 
     JOBS[job_id] = {
         "status": "queued",
@@ -74,19 +52,13 @@ async def create_report(req: AnalyzeRequest, bg: BackgroundTasks):
         "total_reviews": 0,
     }
 
-    # Run pipeline in background
-    bg.add_task(_run_async_pipeline, job_id, req)
+    bg.add_task(run_pipeline, job_id, req)
 
     return {"job_id": job_id, "status": "queued"}
 
 
-async def _run_async_pipeline(job_id: str, req: AnalyzeRequest):
-    await run_pipeline(job_id, req)
-
-
 @app.get("/api/report/{job_id}")
-def get_report(job_id: str):
-    """Get status or result of an analysis job."""
+def get_report(job_id: str) -> dict:
     job = JOBS.get(job_id)
     if not job:
         raise HTTPException(404, f"Job {job_id} not found")
@@ -108,15 +80,10 @@ def get_report(job_id: str):
     return response
 
 
-def start():
-    """Run the server with uvicorn."""
+def start() -> None:
     import uvicorn
-    uvicorn.run(
-        "api.server:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-    )
+
+    uvicorn.run("api.server:app", host="0.0.0.0", port=8000, reload=True)
 
 
 if __name__ == "__main__":

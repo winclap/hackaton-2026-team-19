@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
+import logging
+
 import httpx
+
+logger = logging.getLogger(__name__)
+
+REQUEST_TIMEOUT_SECONDS = 5.0
 
 
 async def notify_frontend(
@@ -13,7 +19,7 @@ async def notify_frontend(
     message: str = "",
     data: dict | None = None,
 ) -> None:
-    """POST a progress update to the frontend webhook. Fire-and-forget."""
+    """POST a progress update to the frontend webhook."""
     if not webhook_url:
         return
 
@@ -27,7 +33,7 @@ async def notify_frontend(
         payload["data"] = data
 
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS) as client:
             await client.post(webhook_url, json=payload)
-    except Exception as e:
-        print(f"[webhook] Failed to notify {webhook_url}: {e}")
+    except httpx.HTTPError as exc:
+        logger.warning("webhook %s failed: %s", webhook_url, exc)

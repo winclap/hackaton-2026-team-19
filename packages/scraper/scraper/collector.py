@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import logging
+
 import pandas as pd
 
 from .client import ApifyClient
 from .sources import get_source
+
+logger = logging.getLogger(__name__)
 
 
 def collect(
@@ -35,9 +39,9 @@ def collect(
         ds = get_source(source_name)
         run_input = ds.build_input(query, **kwargs)
 
-        print(f"[scraper] Running {ds.name} actor ({ds.actor_id}) for '{query}'...")
+        logger.info("running %s actor (%s) for '%s'", ds.name, ds.actor_id, query)
         raw_items = client.run_actor(ds.actor_id, run_input)
-        print(f"[scraper] Got {len(raw_items)} raw items from {ds.name}")
+        logger.info("got %d raw items from %s", len(raw_items), ds.name)
 
         normalized = ds.normalize(raw_items)
         all_rows.extend(normalized)

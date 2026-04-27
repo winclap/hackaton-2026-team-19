@@ -28,9 +28,3 @@ class AnalyzeRequest(BaseModel):
     )
 
 
-class JobStatus(BaseModel):
-    job_id: str
-    status: str  # "scraping" | "quick_analysis" | "deep_analysis" | "done" | "error"
-    progress: float = 0.0  # 0-100
-    message: str = ""
-    data: dict | None = None

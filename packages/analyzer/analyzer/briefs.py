@@ -3,15 +3,18 @@
 from __future__ import annotations
 
 import json
-import re as _re
 
 import pandas as pd
-from anthropic import AnthropicBedrock
+from anthropic import AsyncAnthropicBedrock
 
+from ._bedrock import BRIEFS_MODEL, client_kwargs
+from ._json import parse_json_payload
 
-AWS_PROFILE = "sandbox"
-AWS_REGION = "us-east-1"
-MODEL = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+MAX_TOKENS = 8000
+TOP_QUOTES_PER_CLUSTER = 5
+TOP_QUOTES_GLOBAL = 30
+MAX_CLUSTERS_IN_PROMPT = 8
+
 
 BRIEFS_PROMPT = """You are the Creative Strategy Director at Winclap. \
 Produce 10 creative briefs for paid social ads (Meta, TikTok, YouTube) grounded in REAL consumer voice.
@@ -47,24 +50,51 @@ For each brief return JSON:
 Output a valid JSON array of exactly 10 briefs. No text before or after."""
 
 
-def _parse_json(text: str) -> list | dict:
-    """Extract and parse JSON from LLM output, tolerating markdown fences and invalid escapes."""
-    text = text.strip()
-    if text.startswith("```"):
-        text = text.split("```")[1]
-        if text.startswith("json"):
-            text = text[4:]
-        text = text.strip()
-    for pattern in (r'\[.*\]', r'\{.*\}'):
-        m = _re.search(pattern, text, _re.DOTALL)
-        if m:
-            text = m.group(0)
-            break
-    text = _re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', text)
-    return json.loads(text)
+def _ensure_theme_column(df: pd.DataFrame) -> pd.DataFrame:
+    if "theme" in df.columns and df["theme"].notna().any():
+        return df
+
+    df = df.copy()
+    if "theme_label" in df.columns:
+        df["theme"] = df["theme_label"]
+    else:
+        df["theme"] = "general"
+    return df
 
 
-def generate_briefs(
+def _top_quotes(group: pd.DataFrame, limit: int) -> list[str]:
+    if "quotable" not in group.columns or "verbatim_quote" not in group.columns:
+        return []
+
+    quotable = group[group["quotable"] == True]  # noqa: E712 — pandas mask
+    if quotable.empty:
+        return []
+
+    if "creative_potential" in quotable.columns:
+        quotable = quotable.sort_values("creative_potential", ascending=False)
+
+    return quotable["verbatim_quote"].dropna().head(limit).tolist()
+
+
+def _build_clusters(df: pd.DataFrame) -> list[dict]:
+    total = max(len(df), 1)
+    clusters: list[dict] = []
+    for theme, group in df.groupby("theme"):
+        clusters.append({
+            "theme": theme,
+            "volume": len(group),
+            "pct_of_total": round(len(group) / total * 100, 1),
+            "top_emotions": (
+                group["emotion"].value_counts().head(3).to_dict()
+                if "emotion" in group.columns else {}
+            ),
+            "top_quotes": _top_quotes(group, TOP_QUOTES_PER_CLUSTER),
+        })
+    clusters.sort(key=lambda c: c["volume"], reverse=True)
+    return clusters
+
+
+async def generate_briefs(
     df: pd.DataFrame,
     brand_config: dict,
 ) -> tuple[list[dict], list[dict]]:
@@ -72,59 +102,32 @@ def generate_briefs(
 
     Returns (briefs, clusters) tuple.
     """
-    # Fallback to TF-IDF theme_label when deep analysis didn't produce themes.
-    if "theme" not in df.columns or df["theme"].notna().sum() == 0:
-        df = df.copy()
-        if "theme_label" in df.columns:
-            df["theme"] = df["theme_label"]
-        else:
-            df["theme"] = "general"
-
+    df = _ensure_theme_column(df)
     df_valid = df.dropna(subset=["theme"])
     if df_valid.empty:
         df_valid = df.assign(theme="general")
 
-    clusters = []
-    for theme, group in df_valid.groupby("theme"):
-        top_quotes = (
-            group[group.get("quotable", pd.Series([False] * len(group))) == True]
-            .sort_values("creative_potential", ascending=False)
-            .get("verbatim_quote", pd.Series())
-            .dropna().head(5).tolist()
-        ) if "quotable" in group.columns and "creative_potential" in group.columns else []
+    clusters = _build_clusters(df_valid)
+    top_quotes_global = _top_quotes(df_valid, TOP_QUOTES_GLOBAL)
 
-        clusters.append({
-            "theme": theme,
-            "volume": len(group),
-            "pct_of_total": round(len(group) / max(len(df_valid), 1) * 100, 1),
-            "top_emotions": group["emotion"].value_counts().head(3).to_dict() if "emotion" in group.columns else {},
-            "top_quotes": top_quotes,
-        })
-    clusters.sort(key=lambda c: c["volume"], reverse=True)
-
-    top_quotes_global = []
-    if "quotable" in df_valid.columns and "creative_potential" in df_valid.columns:
-        top_quotes_global = (
-            df_valid[df_valid["quotable"] == True]
-            .sort_values("creative_potential", ascending=False)
-            .get("verbatim_quote", pd.Series())
-            .dropna().head(30).tolist()
-        )
-
-    client = AnthropicBedrock(aws_profile=AWS_PROFILE, aws_region=AWS_REGION)
     prompt = BRIEFS_PROMPT.format(
         brand_name=brand_config.get("name", ""),
         category=brand_config.get("category", ""),
         audience=brand_config.get("audience", ""),
         nonnegotiables="; ".join(brand_config.get("nonnegotiables", [])),
-        cluster_summaries=json.dumps(clusters[:8], indent=2, ensure_ascii=False),
+        cluster_summaries=json.dumps(
+            clusters[:MAX_CLUSTERS_IN_PROMPT], indent=2, ensure_ascii=False
+        ),
         top_quotes="\n".join(f'- "{q}"' for q in top_quotes_global),
     )
 
-    resp = client.messages.create(
-        model=MODEL,
-        max_tokens=8000,
+    client = AsyncAnthropicBedrock(**client_kwargs())
+    resp = await client.messages.create(
+        model=BRIEFS_MODEL,
+        max_tokens=MAX_TOKENS,
         messages=[{"role": "user", "content": prompt}],
     )
-    briefs = _parse_json(resp.content[0].text)
+    briefs = parse_json_payload(resp.content[0].text)
+    if not isinstance(briefs, list):
+        raise ValueError(f"expected briefs JSON array, got {type(briefs).__name__}")
     return briefs, clusters
